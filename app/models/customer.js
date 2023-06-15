@@ -1,24 +1,18 @@
 import mongoose from "mongoose";
-
-const userSchema = new mongoose.Schema(
+import mongoosePaginate from "mongoose-paginate-v2";
+const customerSchema = new mongoose.Schema(
   {
-    name: {
+    company_name: {
       type: String,
       required: true,
     },
     email: {
       type: String,
-      required: true,
       unique: true,
     },
-    password: {
+    address: {
       type: String,
       required: true,
-    },
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
     },
   },
   {
@@ -29,7 +23,6 @@ const userSchema = new mongoose.Schema(
     versionKey: false,
   }
 );
-
-const User = mongoose.model("User", userSchema);
-
-export default User;
+customerSchema.plugin(mongoosePaginate);
+const Customer = mongoose.model("Customer", customerSchema);
+export default Customer;
