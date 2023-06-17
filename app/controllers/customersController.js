@@ -39,7 +39,7 @@ export function createCustomer(req, res, next) {
 }
 export function editCustomer(req, res, next) {
   const { id } = req.params;
-  Customer.findOneAndUpdate({ _id: id }, req.body, { New: true })
+  Customer.findOneAndUpdate({ _id: id }, req.body, { new: true })
     .then((response) => {
       res.status(200).send({ message: response });
     })
