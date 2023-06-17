@@ -1,8 +1,9 @@
-import { getCustomer,getCustomers,createCustomer,editCustomer,deleteCustomer } from "../controllers/customersController.js";
+import { getCustomer,getCustomers,createCustomer,editCustomer,deleteCustomer, GetAll } from "../controllers/customersController.js";
 import {Router } from 'express'
 const CustomerRouter=Router();
 
 CustomerRouter.get('/',getCustomers)
+CustomerRouter.get('/all',GetAll)
 CustomerRouter.get('/:id',getCustomer)
 CustomerRouter.post('/',createCustomer)
 CustomerRouter.put('/:id',editCustomer)

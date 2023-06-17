@@ -58,3 +58,14 @@ export function deleteCustomer(req, res, next) {
       next(err);
     });
 }
+export function GetAll(req, res, next) {
+  Customer.find({})
+  .then((response) => {
+    if (!response)
+      response.status(404).send({ message: "Customers not found" });
+    res.status(200).send({ message: response });
+  })
+  .catch((err) => {
+    next(err);
+  }); 
+}

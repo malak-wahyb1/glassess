@@ -58,3 +58,14 @@ export function deleteProduct(req, res, next) {
       next(err);
     });
 }
+export function All(req, res, next) {
+  Product.find({})
+  .then((response) => {
+    if (!response)
+      response.status(404).send({ message: "Products not found" });
+    res.status(200).send({ message: response });
+  })
+  .catch((err) => {
+    next(err);
+  }); 
+}
