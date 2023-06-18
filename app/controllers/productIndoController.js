@@ -2,7 +2,9 @@ import ProductInfo from "../models/productInfo.js";
 
 export function getProductInfo(req, res, next) {
     const {id}=req.params
-  Supplier.find({product:id})
+    const pageNumber = req.query.page || 1;
+    const pageSize = req.query.pageSize || 10;
+  ProductInfo.paginate({product:id}, { page: pageNumber, limit: pageSize })
     .then((response) => {
       if (!response)
         response.status(404).send({ message: "ProductInfo not found" });
@@ -26,7 +28,7 @@ export function createProductInfo(req, res, next) {
 }
 export function editProductInfo(req, res, next) {
   const { id } = req.params;
-  ProductInfo.findByIdAndUpdate({ product: id }, req.body, { new: true })
+  ProductInfo.findByIdAndUpdate({ _id: id }, req.body, { new: true })
     .then((response) => {
       res.status(200).send({ message: response });
     })
@@ -37,7 +39,7 @@ export function editProductInfo(req, res, next) {
 
 export function deleteProductInfo(req, res, next) {
   const { id } = req.params;
-  ProductInfo.findByIdAndDelete({ product: id }, { new: true })
+  ProductInfo.findByIdAndDelete({ _id: id }, { new: true })
     .then((response) => {
       res.status(200).send({ message: response });
     })

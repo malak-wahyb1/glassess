@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+import mongoosePaginate from "mongoose-paginate-v2";
 const productInfoSchema = new mongoose.Schema(
   {
     selling_price: {
@@ -49,6 +49,7 @@ productInfoSchema.pre("findOneAndUpdate", async function (next) {
     next(error);
   }
 });
+productInfoSchema.plugin(mongoosePaginate);
 
 const ProductInfo = mongoose.model("ProductInfo", productInfoSchema);
 export default ProductInfo;

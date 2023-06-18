@@ -1,12 +1,26 @@
 import mongoose, { Schema } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
+
 const saleSchema = new mongoose.Schema(
   {
-    product: [{
+    type: {
       type: Schema.Types.ObjectId,
       ref: "Product",
       required: true,
-    }],
+    },
+    products: [
+      {
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: "ProductInfo",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     customer: {
       type: Schema.Types.ObjectId,
       ref: "Customer",
@@ -23,25 +37,27 @@ const saleSchema = new mongoose.Schema(
 );
 
 saleSchema.pre("save", async function (next) {
-    try {
-      const productIds = this.product; // Array of product IDs
-      const Product = mongoose.model("Product");
-  
-      // Increment quantity of all associated products by 1
-      await Product.updateMany(
-        { _id: { $in: productIds } },
-        { $inc: { quantity: -1 } }
-      );
-  
-      next();
-    } catch (error) {
-      next(error);
+  try {
+    const products = this.products;
+    const ProductInfo = mongoose.model("ProductInfo");
+
+    for (const product of products) {
+      const { product: productId, quantity } = product;
+      await ProductInfo.findByIdAndUpdate(productId, { $inc: { quantity: -quantity } });
     }
-  });
-saleSchema.pre(["find", "findOne"], function () {
-  this.populate(["product", "customer"]);
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
+
+saleSchema.pre(["find", "findOne"], function () {
+  this.populate(["products.product", "customer", "type"]);
+});
+
 saleSchema.plugin(mongoosePaginate);
+
 const Sale = mongoose.model("Sale", saleSchema);
 
 export default Sale;

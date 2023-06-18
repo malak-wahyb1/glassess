@@ -39,7 +39,7 @@ export function createSupplier(req, res, next) {
 }
 export function editSupplier(req, res, next) {
   const { id } = req.params;
-  Supplier.findOneAndUpdate({ _id: id }, req.body, { New: true })
+  Supplier.findOneAndUpdate({ _id: id }, req.body, { new: true })
     .then((response) => {
       res.status(200).send({ message: response });
     })
