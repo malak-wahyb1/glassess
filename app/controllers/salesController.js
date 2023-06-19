@@ -1,12 +1,11 @@
 import Sale from "../models/sales.js";
 
 export function getSales(req, res, next) {
-    const pageNumber = req.query.page || 1;
-    const pageSize = req.query.pageSize || 8;
-    Sale.paginate({}, { page: pageNumber, limit: pageSize })
+  const pageNumber = req.query.page || 1;
+  const pageSize = req.query.pageSize || 8;
+  Sale.paginate({}, { page: pageNumber, limit: pageSize })
     .then((response) => {
-      if (!response)
-        response.status(404).send({ message: "Sales not found" });
+      if (!response) response.status(404).send({ message: "Sales not found" });
       res.status(200).send({ message: response });
     })
     .catch((err) => {
@@ -18,8 +17,7 @@ export function getSale(req, res, next) {
   const { id } = req.params;
   Sale.find({ _id: id })
     .then((response) => {
-      if (!response)
-        response.status(404).send({ message: "Sale not found" });
+      if (!response) response.status(404).send({ message: "Sale not found" });
       res.status(200).send({ message: response });
     })
     .catch((err) => {
