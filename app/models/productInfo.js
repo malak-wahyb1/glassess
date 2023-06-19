@@ -40,14 +40,19 @@ const productInfoSchema = new mongoose.Schema(
 productInfoSchema.pre("findOneAndUpdate", async function (next) {
   try {
     const docToUpdate = await this.model.findOne(this.getQuery());
-    if (docToUpdate && docToUpdate.quantity === 1) {
-      docToUpdate.isStocked = false;
+    if (docToUpdate) {
+      docToUpdate.quantity = this._update.quantity; // Update the quantity value from the update operation
+      docToUpdate.isStocked = docToUpdate.quantity < 1 ? false : true;
       await docToUpdate.save();
     }
     next();
   } catch (error) {
     next(error);
   }
+});
+
+productInfoSchema.pre(["find"], function () {
+  this.populate("product");
 });
 productInfoSchema.plugin(mongoosePaginate);
 

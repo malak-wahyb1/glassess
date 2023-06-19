@@ -1,9 +1,11 @@
 
 import {Router } from 'express'
-import { createSupplier, deleteSupplier, editSupplier, getSupplier, getSuppliers } from '../controllers/ supliersController.js';
+import { createSupplier, deleteSupplier, editSupplier, getLastFiveSuppliers, getSupplier, getSuppliers } from '../controllers/ supliersController.js';
 const SupplierRouter=Router();
 
 SupplierRouter.get('/',getSuppliers)
+SupplierRouter.get('/last',getLastFiveSuppliers)
+
 SupplierRouter.get('/:id',getSupplier)
 SupplierRouter.post('/',createSupplier)
 SupplierRouter.put('/:id',editSupplier)

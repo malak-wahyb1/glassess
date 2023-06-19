@@ -2,7 +2,7 @@ import Product from "../models/product.js";
 
 export function getProducts(req, res, next) {
     const pageNumber = req.query.page || 1;
-    const pageSize = req.query.pageSize || 10;
+    const pageSize = req.query.pageSize ||40 ;
     Product.paginate({}, { page: pageNumber, limit: pageSize })
     .then((response) => {
       if (!response)

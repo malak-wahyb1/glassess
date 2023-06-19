@@ -3,10 +3,9 @@ import mongoosePaginate from "mongoose-paginate-v2";
 
 const saleSchema = new mongoose.Schema(
   {
-    type: {
-      type: Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
+    discount: {
+      type: Number,
+      default:0,
     },
     products: [
       {
@@ -17,7 +16,7 @@ const saleSchema = new mongoose.Schema(
         },
         quantity: {
           type: Number,
-          required: true,
+          default: 1,
         },
       },
     ],
@@ -43,7 +42,9 @@ saleSchema.pre("save", async function (next) {
 
     for (const product of products) {
       const { product: productId, quantity } = product;
-      await ProductInfo.findByIdAndUpdate(productId, { $inc: { quantity: -quantity } });
+      await ProductInfo.findByIdAndUpdate(productId, {
+        $inc: { quantity: -quantity },
+      });
     }
 
     next();
@@ -52,8 +53,10 @@ saleSchema.pre("save", async function (next) {
   }
 });
 
-saleSchema.pre(["find", "findOne"], function () {
-  this.populate(["products.product", "customer", "type"]);
+saleSchema.pre(["find", "findOne"], function (next) {
+  this.populate("products.product");
+  this.populate("customer");
+  next();
 });
 
 saleSchema.plugin(mongoosePaginate);

@@ -58,3 +58,13 @@ export function deleteSupplier(req, res, next) {
       next(err);
     });
 }
+export function getLastFiveSuppliers (req, res, next)  {
+
+  Supplier.find({})
+    .sort({ created_at: -1 }) // Sort by createdAt field in descending order
+    .limit(5).then((response) =>{
+      res.status(200).send({ message: response})
+    }).catch((error)=>{
+ next(error);
+})
+};

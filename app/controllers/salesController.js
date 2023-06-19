@@ -2,7 +2,7 @@ import Sale from "../models/sales.js";
 
 export function getSales(req, res, next) {
     const pageNumber = req.query.page || 1;
-    const pageSize = req.query.pageSize || 10;
+    const pageSize = req.query.pageSize || 8;
     Sale.paginate({}, { page: pageNumber, limit: pageSize })
     .then((response) => {
       if (!response)
