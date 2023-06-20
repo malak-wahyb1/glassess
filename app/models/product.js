@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
+import ProductInfo from "./productInfo.js";
 const productSchema = new mongoose.Schema(
   {
     type: {
