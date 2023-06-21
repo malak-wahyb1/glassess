@@ -1,5 +1,5 @@
 import ProductInfo from "../models/productInfo.js";
-import csvtojson from 'csvtojson'
+// import csvtojson from 'csvtojson'
 export function getProductInfo(req, res, next) {
   const { id } = req.params;
   const pageNumber = req.query.page || 1;
@@ -69,7 +69,27 @@ export function getLastFiveOutOfStockProducts(req, res, next) {
       next(err);
     });
 }
+export const addProductsToBackend = async (req, res) => {
+  try {
+    const { dataArray ,product} = req.body;
 
-export function insertProduct(req,res,next){
-  csvtojson().fromFile('file.csv').then((data) => {res.send(data)}).catch((err) => {next(err);});
-}
+    const products = dataArray.map(({ power, barcode }) => ({
+      selling_price: "", // Add your desired selling_price value
+      buying_price: "", // Add your desired buying_price value
+      quantity: 0, // Add your desired quantity value
+      isStocked: true, // Add your desired isStocked value
+      bar_code: barcode,
+      power,
+      product: product, // Add your desired product reference value
+    }));
+
+    const createdProducts = await ProductInfo.insertMany(products);
+    res.status(201).json(createdProducts);
+  } catch (error) {
+    console.error('Error creating products:', error.writeErrors[0].err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+// export function insertProduct(req,res,next){
+//   csvtojson().fromFile('file.csv').then((data) => {res.send(data)}).catch((err) => {next(err);});
+// }
