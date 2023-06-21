@@ -11,7 +11,6 @@ const router = Router();
 router.get("/test", (req, res) => {
     res.send("Api is working fine")
 })
-router.use(cors())
 router.use("/user", userRouter)
 router.use('/product', productRouter)
 router.use('/sale', saleRouter)

@@ -43,13 +43,13 @@ const login = async (req, res) => {
 
     // Check if the user exists
     if (!user) {
-      return res.status(401).json({success:false, message: 'Authentication failed' });
+      return res.status(401).json({success:false, message: 'Authentication failed',place:"user error" });
     }
 
     // Check if the password matches
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-      return res.status(401).json({success:false, message: 'Authentication failed' });
+      return res.status(401).json({success:false, message: 'Authentication failed',place:"password error" });
     }
 
     // Generate a JWT token
