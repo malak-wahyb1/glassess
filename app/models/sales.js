@@ -9,9 +9,11 @@ const saleSchema = new mongoose.Schema(
     },
     products: [
       {
-        product_id: {
-          type: Schema.Types.ObjectId,
-          ref: "ProductInfo",
+        product_power: {
+          type: String,
+        },
+        price:{
+          type: String,
         },
         barcode: {
           type: String,
@@ -24,8 +26,7 @@ const saleSchema = new mongoose.Schema(
       },
     ],
     customer: {
-      type: Schema.Types.ObjectId,
-      ref: "Customer",
+   type: String,
       required: true,
     },
   },
@@ -38,10 +39,7 @@ const saleSchema = new mongoose.Schema(
   }
 );
 
-
-
 saleSchema.pre(["find", "findOne"], function (next) {
-  this.populate("products.product_id");
   this.populate("customer");
   next();
 });

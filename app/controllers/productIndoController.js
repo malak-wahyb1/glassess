@@ -1,5 +1,5 @@
 import ProductInfo from "../models/productInfo.js";
-
+import csvtojson from 'csvtojson'
 export function getProductInfo(req, res, next) {
   const { id } = req.params;
   const pageNumber = req.query.page || 1;
@@ -70,3 +70,6 @@ export function getLastFiveOutOfStockProducts(req, res, next) {
     });
 }
 
+export function insertProduct(req,res,next){
+  csvtojson().fromFile('file.csv').then((data) => {res.send(data)}).catch((err) => {next(err);});
+}

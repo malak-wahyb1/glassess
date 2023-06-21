@@ -9,7 +9,7 @@ const productInfoSchema = new mongoose.Schema(
       type: String,
     },
     quantity: {
-      type: String,
+      type: Number,
     },
     isStocked: {
       type: Boolean,

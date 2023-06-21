@@ -5,15 +5,20 @@ const customerSchema = new mongoose.Schema(
     company_name: {
       type: String,
       required: true,
+      
     },
     email: {
       type: String,
-      unique: true,
+      default:'No Email'
     },
     address: {
       type: String,
       required: true,
     },
+    phone: {
+      type: String,
+      default:'No Phone',
+    }
   },
   {
     timestamps: {

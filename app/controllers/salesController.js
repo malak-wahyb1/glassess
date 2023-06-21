@@ -36,11 +36,13 @@ export async function createSale(req, res, next) {
       const existingProduct = await ProductInfo.findOne({
         bar_code: product.barcode,
       });
+     
       if (!existingProduct || existingProduct.quantity === 0) {
         products.splice(i, 1);
         i--;
       } else {
-        products[i].product_id = existingProduct._id;
+        products[i].product_power = existingProduct.power;
+        products[i].price=existingProduct.selling_price
       }
     }
     if (products.length > 0) {
@@ -61,6 +63,8 @@ export async function createSale(req, res, next) {
           { $set: { quantity: updatedQuantity } }
         );
       }
+    const customer =await Customer.findOne({_id:req.body.customer})
+    sale.customer=customer.company_name
       sale
         .save()
         .then((response) => {
