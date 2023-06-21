@@ -105,22 +105,8 @@ export function editSale(req, res, next) {
 
         let updatedQuantity;
     
-        if (quantity > oldQuantity) {
           updatedQuantity = quantity - oldQuantity;
-        } else {
-        const  addedQuantity = oldQuantity - quantity;
-          product.quantity = quantity;
-          const productQuantityNum = parseInt(productQuantity);
-          const addedQuantityNum = parseInt(addedQuantity);
-          const updatedQuantityTow=productQuantityNum +addedQuantityNum ;
-          console.log("updated"+updatedQuantityTow)
-          const savedQt=parseInt(updatedQuantityTow)
-          await ProductInfo.findOneAndUpdate(
-            { bar_code: barcode },
-            
-            { $set: { quantity: savedQt } }
-          );
-        }
+     
         if (updatedQuantity > productQuantity) {
           product.quantity = productQuantity;
           await ProductInfo.findOneAndUpdate(
