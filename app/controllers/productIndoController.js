@@ -59,16 +59,14 @@ export function getProductsInfo(req, res, next) {
     });
 }
 export function getLastFiveOutOfStockProducts(req, res, next) {
-  ProductInfo.find({ isStocked: false })
+  ProductInfo.find({ quantity: 0 })
     .sort({ created_at: -1 })
     .limit(5)
-    .populate('product')
-    .exec((err, products) => {
-      if (err) {
-        console.log("Error retrieving products:", err);
-        return next(err);
-      }
+    .then(( products) => {
+    
       res.status(200).send({ message: products });
+    }).catch((err) => {
+      next(err);
     });
 }
 
