@@ -5,7 +5,7 @@ import Supplier from "../models/ suplier.js";
 export function getSales(req, res, next) {
   const pageNumber = req.query.page || 1;
   const pageSize = req.query.pageSize || 8;
-  Sale.paginate({}, { page: pageNumber, limit: pageSize, sort: { sales: -1 } })
+  Sale.paginate({}, { page: pageNumber, limit: pageSize, sort: { updated_at: -1 } })
     .then((response) => {
       if (!response) response.status(404).send({ message: "Sales not found" });
       res.status(200).send({ message: response });
