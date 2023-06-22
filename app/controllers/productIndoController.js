@@ -93,3 +93,35 @@ export const addProductsToBackend = async (req, res) => {
 // export function insertProduct(req,res,next){
 //   csvtojson().fromFile('file.csv').then((data) => {res.send(data)}).catch((err) => {next(err);});
 // }
+export async function updateProductInfos(req, res) {
+  try {
+    const {quantity,product} = req.body; // Assuming the array of productInfo objects is in the request body
+
+    const updateOperations = quantity.map(async (productInfo) => {
+      const { power, quantity, price } = productInfo;
+
+      // Construct the update object
+      const update = {
+        quantity,
+        selling_price: price,
+        isStocked: quantity < 1 ? false : true,
+      };
+
+      // Update the productInfo document
+      const updatedProductInfo = await ProductInfo.findOneAndUpdate(
+        { power ,product}, // Assuming power is unique for each productInfo
+        update,
+        { new: true } // Return the updated document
+      );
+
+      return updatedProductInfo;
+    });
+
+    const updatedProductInfos = await Promise.all(updateOperations);
+
+    res.json(updatedProductInfos);
+    // res.json(quantity)
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while updating productInfos.' });
+  }
+}

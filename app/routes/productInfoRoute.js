@@ -7,7 +7,8 @@ import {
   getLastFiveOutOfStockProducts,
   // insertProduct,
   getProductInfo,
-  getProductsInfo
+  getProductsInfo,
+  updateProductInfos
 } from "../controllers/productIndoController.js";
 const ProductInfoRoute = Router();
 
@@ -17,6 +18,7 @@ ProductInfoRoute.get("/", getProductsInfo);
 ProductInfoRoute.get("/last", getLastFiveOutOfStockProducts);
 ProductInfoRoute.post("/", createProductInfo);
 ProductInfoRoute.post("/many", addProductsToBackend);
+ProductInfoRoute.patch("/many", updateProductInfos);
 ProductInfoRoute.put("/:id", editProductInfo);
 ProductInfoRoute.delete("/:id", deleteProductInfo);
 export default ProductInfoRoute;
