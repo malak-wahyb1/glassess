@@ -50,7 +50,7 @@ export function editProduct(req, res, next) {
 
 export function deleteProduct(req, res, next) {
   const { id } = req.params;
-  Product.findOneAndDelete({ _id: id }, { new: true })
+  Product.findByIdAndDelete(id, { new: true })
     .then((response) => {
       res.status(200).send({ message: response });
     })
