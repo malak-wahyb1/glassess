@@ -5,7 +5,10 @@ import Supplier from "../models/ suplier.js";
 export function getSales(req, res, next) {
   const pageNumber = req.query.page || 1;
   const pageSize = req.query.pageSize || 8;
-  Sale.paginate({}, { page: pageNumber, limit: pageSize, sort: { updated_at: -1 } })
+  Sale.paginate(
+    {},
+    { page: pageNumber, limit: pageSize, sort: { updated_at: -1 } }
+  )
     .then((response) => {
       if (!response) response.status(404).send({ message: "Sales not found" });
       res.status(200).send({ message: response });
@@ -27,24 +30,52 @@ export function getSale(req, res, next) {
     });
 }
 export async function createSale(req, res, next) {
-  const sale = new Sale(req.body);
 
-  const products = sale.products;
+  const tempProducts = req.body.products;
+
+  // Create a new array to store the consolidated products
+  const products = [];
+  
+  // Create a map to track products by barcode
+  const productMap = new Map();
+  
+  // Iterate over the temporary products array
+  for (const tempProduct of tempProducts) {
+    const barcode = tempProduct.barcode;
+  
+    // If the product already exists in the product map, add its quantity and update the selling price
+    if (productMap.has(barcode)) {
+      const existingProduct = productMap.get(barcode);
+      existingProduct.quantity += tempProduct.quantity;
+    } else {
+      // If the product doesn't exist in the product map, add it
+      productMap.set(barcode, tempProduct);
+      
+    }
+  }
+  
+  // Add the consolidated products from the product map to the products array
+  for (const product of productMap.values()) {
+    products.push(product);
+  }
+  
   try {
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
       const existingProduct = await ProductInfo.findOne({
         bar_code: product.barcode,
       });
-     
+
       if (!existingProduct || existingProduct.quantity === 0) {
         products.splice(i, 1);
         i--;
       } else {
-        products[i].product_power = existingProduct.power;
-        products[i].price=existingProduct.selling_price
+        product.product_power = existingProduct.power;
+        products[i].price = existingProduct.selling_price.replace("$", "");
       }
     }
+  const sale = new Sale({...req.body,products});
+
     if (products.length > 0) {
       for (const product of products) {
         const { barcode, quantity } = product;
@@ -63,8 +94,8 @@ export async function createSale(req, res, next) {
           { $set: { quantity: updatedQuantity } }
         );
       }
-    const customer =await Customer.findOne({_id:req.body.customer})
-    sale.customer=customer.company_name
+      const customer = await Customer.findOne({ _id: req.body.customer });
+      sale.customer = customer.company_name;
       sale
         .save()
         .then((response) => {
@@ -80,82 +111,57 @@ export async function createSale(req, res, next) {
     next(error);
   }
 }
-export function editSale(req, res, next) {
+export async function editSale(req, res, next) {
   const { id } = req.params;
   const { products } = req.body;
-  if(req.body.products) {
- 
-    Sale.findOne({ _id: id }) // Retrieve the existing sale without updating it yet
-    .then(async (existingSale) => {
-      if (!existingSale) {
-        throw new Error("Sale not found: " + id);
+  
+  try {
+    const sale = await Sale.findById(id);
+
+    if (!sale) {
+      throw new Error("Sale not found: " + id);
+    }
+
+    for (const product of products) {
+      const { barcode, quantity } = product;
+
+      const existingProduct = await ProductInfo.findOne({
+        bar_code: barcode,
+      });
+
+      if (!existingProduct) {
+        throw new Error("Product not found: " + barcode);
       }
 
-      const updatedSale = existingSale;
+      const oldQuantity = parseInt(sale.products.find((p) => p.barcode === barcode)?.quantity || 0);
+      const newQuantity = parseInt(quantity);
 
-      for (const product of products) {
-        const { barcode, quantity } = product;
-        
-        const existingProduct = await ProductInfo.findOne({
-          bar_code: barcode,
-        });
+      const quantityDiff = newQuantity - oldQuantity;
 
-        if (!existingProduct) {
-          throw new Error("Product not found: " + barcode);
-        }
-
-        const productQuantity = parseInt(existingProduct.quantity);
-        const oldQuantity = parseInt(existingSale.products.find((p) => p.barcode === barcode)?.quantity || 0);
-
-        let updatedQuantity;
-    
-          updatedQuantity = quantity - oldQuantity;
-     
-        if (updatedQuantity > productQuantity) {
-          product.quantity = productQuantity;
-          await ProductInfo.findOneAndUpdate(
-            { bar_code: barcode },
-            { $set: { quantity: 0 } }
-          );
-          updatedSale.products.forEach((saleProduct) => {
-            if (saleProduct.barcode === barcode) {
-              saleProduct.quantity = productQuantity;
-            }
-          });
-        } else {
-          const updatedQuantity1 =productQuantity - updatedQuantity;
-          await ProductInfo.findOneAndUpdate(
-            { bar_code: barcode },
-            { $set: { quantity: updatedQuantity1 } }
-          );
-        }
-      
-        updatedSale.products.forEach((saleProduct) => {
-          if (saleProduct.barcode === barcode) {
-            saleProduct.quantity = product.quantity; // Replace with the new quantity from req.body
-          }
-        });
+      if (quantityDiff < 0) {
+        throw new Error("Invalid quantity update for product: " + barcode);
       }
 
-      await updatedSale.save();
+      const updatedQuantity = existingProduct.quantity - quantityDiff;
 
-      res.status(200).send({ message: updatedSale });
-    })
-    .catch((err) => {
-      next(err);
-    });
-  }else{
-   
-      Sale.findOneAndUpdate({ _id: id }, req.body, { new: true })
-        .then(async (response) => {
-          res.status(200).send({ message: response });
-        })
-        .catch((error) => {
-          next(error);
-        });
-    
+      if (updatedQuantity < 0) {
+        throw new Error("Insufficient quantity for product: " + barcode);
+      }
+
+      await ProductInfo.findOneAndUpdate(
+        { bar_code: barcode },
+        { $set: { quantity: updatedQuantity } }
+      );
+    } 
+    const updatedSale =await  Sale.findByIdAndUpdate(id,{products},{new:true})
+    console.log(updatedSale)
+
+    res.status(200).send({ message: "Sale updated successfully" ,sale:updatedSale});
+  } catch (error) {
+    next(error);
   }
 }
+
 
 export function deleteSale(req, res, next) {
   const { id } = req.params;
@@ -169,7 +175,7 @@ export function deleteSale(req, res, next) {
 }
 export function getLastFiveItems(req, res, next) {
   const models = [ProductInfo, Customer, Supplier];
-  const fields = ['created_at', 'created_at', 'created_at'];
+  const fields = ["created_at", "created_at", "created_at"];
   const responses = [];
 
   const fetchItems = (index) => {
@@ -185,7 +191,10 @@ export function getLastFiveItems(req, res, next) {
       Promise.all([
         models[index].find(quantityZeroQuery),
         models[index].find(quantityLessThanTenQuery),
-        models[index].find({}).sort({ [fields[index]]: -1 }).limit(5),
+        models[index]
+          .find({})
+          .sort({ [fields[index]]: -1 })
+          .limit(5),
       ])
         .then(([zeroResponse, lessThanTenResponse, lastFiveResponse]) => {
           responses.push(zeroResponse);
@@ -213,4 +222,3 @@ export function getLastFiveItems(req, res, next) {
 
   fetchItems(0);
 }
-
