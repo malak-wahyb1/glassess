@@ -1,19 +1,23 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import User from '../models/user.js';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/user.js";
 
 const register = async (req, res) => {
-  const { password,confirmPassword,...userData } = req.body;
-  const { email  } = userData;
+  const { password, confirmPassword, ...userData } = req.body;
+  const { email } = userData;
 
   try {
-    if(password!==confirmPassword) {
-        return res.status(400).json({success:false, message:"Passwords do not match" });
+    if (password !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
     }
     // Check if the user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({success:false, message: 'User already exists' });
+      return res
+        .status(409)
+        .json({ success: false, message: "User already exists" });
     }
 
     // Hash the password
@@ -21,22 +25,30 @@ const register = async (req, res) => {
 
     // Create a new user
     const newUser = new User({
-        ...userData,
+      ...userData,
       password: hashedPassword,
     });
 
     // Save the user to the database
     await newUser.save();
 
-    res.status(201).json({success:true, message: 'User registered successfully' });
+    res
+      .status(201)
+      .json({ success: true, message: newUser });
   } catch (error) {
-    res.status(500).json({success:false, message: 'Registration failed', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Registration failed",
+        error: error.message,
+      });
   }
 };
 
 const login = async (req, res) => {
   const { email, password } = req.body;
-  console.log({email,password})
+  console.log({ email, password });
 
   try {
     // Find the user by email
@@ -44,22 +56,99 @@ const login = async (req, res) => {
 
     // Check if the user exists
     if (!user) {
-      return res.status(401).json({success:false, message: 'Authentication failed',place:"user error" });
+      return res
+        .status(401)
+        .json({
+          success: false,
+          message: "Authentication failed",
+          place: "user error",
+        });
     }
 
     // Check if the password matches
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-      return res.status(401).json({success:false, message: 'Authentication failed',place:"password error" });
+      return res
+        .status(401)
+        .json({
+          success: false,
+          message: "Authentication failed",
+          place: "password error",
+        });
     }
 
     // Generate a JWT token
-    const token = jwt.sign({ userId: user._id,role:user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    const {password:trash, ...userInfo}=user
-    res.status(200).json({success:true, message: 'Login successful', token ,user:userInfo._doc});
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    const { password: trash, ...userInfo } = user;
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Login successful",
+        token,
+        user: userInfo._doc,
+      });
   } catch (error) {
-    res.status(500).json({success:false, message: 'Login failed', error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Login failed", error: error.message });
   }
 };
 
-export { register, login };
+const getUsers = async (req, res, next) => {
+  const pageNumber = req.query.page || 1;
+  const pageSize = req.query.pageSize || 8;
+  User.paginate(
+    {},
+    { page: pageNumber, limit: pageSize, sort: { updated_at: -1 } }
+  )
+    .then((response) => {
+      if (!response) response.status(404).send({ message: "Users not found" });
+      res.status(200).send({ message: response });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+const editUser = async (req, res, next) => {
+  const { id } = req.params;
+  const { password } = req.body;
+  if (password) {
+    const updates = req.body;
+    return bcrypt.genSalt(10).then((salt) =>
+      bcrypt.hash(password, salt).then((hashPassword) => {
+        updates.password = hashPassword;
+        return User.findByIdAndUpdate(id, { $set: updates }, { new: true })
+          .then((user) => {
+            res.status(200).send({ user });
+          })
+          .catch((error) => {
+            next(error);
+          });
+      })
+    );
+  }
+
+  User.findByIdAndUpdate(id, req.body, { new: true })
+    .then((model) => {
+      res.status(200).send({user: model });
+    })
+    .catch((error) => {
+      next(error);
+    });
+};
+const deleteUser = async (req, res, next) => {
+  const { id } = req.params;
+  User.findOneAndDelete({ _id: id }, { new: true })
+    .then((response) => {
+      res.status(200).send({ message: response });
+    })
+    .catch((err) => {
+      next(err);
+    });
+}
+export { register, login, getUsers, editUser ,deleteUser};

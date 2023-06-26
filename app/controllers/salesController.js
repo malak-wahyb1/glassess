@@ -186,19 +186,17 @@ export function getLastFiveItems(req, res, next) {
 
     if (models[index] === ProductInfo) {
       const quantityZeroQuery = { quantity: 0 };
-      const quantityLessThanTenQuery = { quantity: { $lt: 10 } };
+   
 
       Promise.all([
         models[index].find(quantityZeroQuery),
-        models[index].find(quantityLessThanTenQuery),
         models[index]
           .find({})
           .sort({ [fields[index]]: -1 })
           .limit(5),
       ])
-        .then(([zeroResponse, lessThanTenResponse, lastFiveResponse]) => {
+        .then(([zeroResponse, lastFiveResponse]) => {
           responses.push(zeroResponse);
-          responses.push(lessThanTenResponse);
           responses.push(lastFiveResponse);
           fetchItems(index + 1);
         })

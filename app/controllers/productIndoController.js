@@ -61,7 +61,6 @@ export function getProductsInfo(req, res, next) {
 export function getLastFiveOutOfStockProducts(req, res, next) {
   ProductInfo.find({ quantity: 0 })
     .sort({ created_at: -1 })
-    .limit(5)
     .then(( products) => {
     
       res.status(200).send({ message: products });
