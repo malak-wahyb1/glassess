@@ -107,7 +107,6 @@ const getUsers = async (req, res, next) => {
     { page: pageNumber, limit: pageSize, sort: { updated_at: -1 } }
   )
     .then((response) => {
-      console.log(response);
       if (!response) res.status(404).send({ message: "Users not found" });
       res.status(200).send({ message: response });
     })
