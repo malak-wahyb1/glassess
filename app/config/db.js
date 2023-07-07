@@ -8,6 +8,7 @@ const dbUrl = DB_URL.replace('<username>', DB_USERNAME).replace('<password>', DB
 
 const connectToDatabase = async () => {
   try {
+    console.log(dbUrl)
     await mongoose.connect(dbUrl, {
       useNewUrlParser: true,
       useUnifiedTopology: true,

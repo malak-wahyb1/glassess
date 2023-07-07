@@ -29,6 +29,86 @@ export function getSale(req, res, next) {
       next(err);
     });
 }
+
+export async function uncountedSales(req, res, next) {
+
+  const tempProducts = req.body.products;
+
+  // Create a new array to store the consolidated products
+  const products = [];
+  
+  // Create a map to track products by barcode
+  const productMap = new Map();
+  
+  // Iterate over the temporary products array
+  for (const tempProduct of tempProducts) {
+    const barcode = tempProduct.barcode;
+  
+    // If the product already exists in the product map, add its quantity and update the selling price
+    if (productMap.has(barcode)) {
+      const existingProduct = productMap.get(barcode);
+      existingProduct.quantity += tempProduct.quantity;
+    } else {
+      // If the product doesn't exist in the product map, add it
+      productMap.set(barcode, tempProduct);
+      
+    }
+  }
+  
+  // Add the consolidated products from the product map to the products array
+  for (const product of productMap.values()) {
+    products.push(product);
+  }
+  
+  try {
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+      const existingProduct = await ProductInfo.findOne({
+        bar_code: product.barcode,
+      });
+
+      if (!existingProduct || existingProduct.quantity === 0) {
+        products.splice(i, 1);
+        i--;
+      } else {
+        product.product_power = existingProduct.power;
+        products[i].price = existingProduct.selling_price.replace("$", "");
+      }
+    }
+  const sale = new Sale({...req.body,products});
+
+    if (products.length > 0) {
+      for (const product of products) {
+        const { barcode, quantity } = product;
+        const existingProduct = await ProductInfo.findOne({
+          bar_code: barcode,
+        });
+
+        if (!existingProduct || existingProduct.quantity < quantity) {
+          throw new Error("Insufficient quantity for product: " + barcode);
+        }
+
+        const updatedQuantity = existingProduct.quantity - quantity;
+
+  
+      }
+      const customer = await Customer.findOne({ _id: req.body.customer });
+      sale.customer = customer.company_name;
+      sale
+        .save()
+        .then((response) => {
+          res.status(201).send({ message: response });
+        })
+        .catch((err) => {
+          next(err);
+        });
+    } else {
+      throw new Error("No valid products found");
+    }
+  } catch (error) {
+    next(error);
+  }
+}
 export async function createSale(req, res, next) {
 
   const tempProducts = req.body.products;
