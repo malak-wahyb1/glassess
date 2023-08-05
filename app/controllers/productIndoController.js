@@ -1,13 +1,24 @@
 import ProductInfo from "../models/productInfo.js";
 // import csvtojson from 'csvtojson'
 export function getProductInfo(req, res, next) {
+  const { query } = req.query;
   const { id } = req.params;
   const pageNumber = req.query.page || 1;
   const pageSize = req.query.pageSize || 10;
-  ProductInfo.paginate({ product: id }, { page: pageNumber, limit: pageSize })
+
+  let queryCondition = { product: id };
+
+  if (query && query !== "") {
+    // If the 'query' parameter is provided, search for the 'power' field containing the query
+    queryCondition.power = { $regex: query, $options: "i" }; // 'i' for case-insensitive search
+  }
+  console.log(queryCondition);
+  ProductInfo.paginate(queryCondition, { page: pageNumber, limit: pageSize })
     .then((response) => {
-      if (!response)
-        response.status(404).send({ message: "ProductInfo not found" });
+      // console.log(response)
+      if (!response || response.total === 0) {
+        return res.status(404).send({ message: "ProductInfo not found" });
+      }
       res.status(200).send({ message: response });
     })
     .catch((err) => {
@@ -48,7 +59,7 @@ export function deleteProductInfo(req, res, next) {
     });
 }
 export function getProductsInfo(req, res, next) {
-  ProductInfo.find({isStocked: true})
+  ProductInfo.find({ isStocked: true })
     .then((response) => {
       if (!response)
         response.status(404).send({ message: "ProductInfo not found" });
@@ -61,16 +72,16 @@ export function getProductsInfo(req, res, next) {
 export function getLastFiveOutOfStockProducts(req, res, next) {
   ProductInfo.find({ quantity: 0 })
     .sort({ created_at: -1 })
-    .then(( products) => {
-    
+    .then((products) => {
       res.status(200).send({ message: products });
-    }).catch((err) => {
+    })
+    .catch((err) => {
       next(err);
     });
 }
 export const addProductsToBackend = async (req, res) => {
   try {
-    const { dataArray ,product} = req.body;
+    const { dataArray, product } = req.body;
 
     const products = dataArray.map(({ power, barcode }) => ({
       selling_price: "", // Add your desired selling_price value
@@ -85,8 +96,8 @@ export const addProductsToBackend = async (req, res) => {
     const createdProducts = await ProductInfo.insertMany(products);
     res.status(201).json(createdProducts);
   } catch (error) {
-    console.error('Error creating products:', error.writeErrors[0].err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error creating products:", error.writeErrors[0].err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 // export function insertProduct(req,res,next){
@@ -94,7 +105,7 @@ export const addProductsToBackend = async (req, res) => {
 // }
 export async function updateProductInfos(req, res) {
   try {
-    const {quantity,product} = req.body; // Assuming the array of productInfo objects is in the request body
+    const { quantity, product } = req.body; // Assuming the array of productInfo objects is in the request body
 
     const updateOperations = quantity.map(async (productInfo) => {
       const { power, quantity, price } = productInfo;
@@ -108,7 +119,7 @@ export async function updateProductInfos(req, res) {
 
       // Update the productInfo document
       const updatedProductInfo = await ProductInfo.findOneAndUpdate(
-        { power ,product}, // Assuming power is unique for each productInfo
+        { power, product }, // Assuming power is unique for each productInfo
         update,
         { new: true } // Return the updated document
       );
@@ -121,6 +132,8 @@ export async function updateProductInfos(req, res) {
     res.json(updatedProductInfos);
     // res.json(quantity)
   } catch (error) {
-    res.status(500).json({ error: 'An error occurred while updating productInfos.' });
+    res
+      .status(500)
+      .json({ error: "An error occurred while updating productInfos." });
   }
 }

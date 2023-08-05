@@ -31,19 +31,18 @@ export function getSale(req, res, next) {
 }
 
 export async function uncountedSales(req, res, next) {
-
   const tempProducts = req.body.products;
 
   // Create a new array to store the consolidated products
   const products = [];
-  
+
   // Create a map to track products by barcode
   const productMap = new Map();
-  
+
   // Iterate over the temporary products array
   for (const tempProduct of tempProducts) {
     const barcode = tempProduct.barcode;
-  
+
     // If the product already exists in the product map, add its quantity and update the selling price
     if (productMap.has(barcode)) {
       const existingProduct = productMap.get(barcode);
@@ -51,15 +50,14 @@ export async function uncountedSales(req, res, next) {
     } else {
       // If the product doesn't exist in the product map, add it
       productMap.set(barcode, tempProduct);
-      
     }
   }
-  
+
   // Add the consolidated products from the product map to the products array
   for (const product of productMap.values()) {
     products.push(product);
   }
-  
+
   try {
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
@@ -75,7 +73,7 @@ export async function uncountedSales(req, res, next) {
         products[i].price = existingProduct.selling_price.replace("$", "");
       }
     }
-  const sale = new Sale({...req.body,products});
+    const sale = new Sale({ ...req.body, products });
 
     if (products.length > 0) {
       for (const product of products) {
@@ -89,8 +87,6 @@ export async function uncountedSales(req, res, next) {
         }
 
         const updatedQuantity = existingProduct.quantity - quantity;
-
-  
       }
       const customer = await Customer.findOne({ _id: req.body.customer });
       sale.customer = customer.company_name;
@@ -110,19 +106,18 @@ export async function uncountedSales(req, res, next) {
   }
 }
 export async function createSale(req, res, next) {
-
   const tempProducts = req.body.products;
 
   // Create a new array to store the consolidated products
   const products = [];
-  
+
   // Create a map to track products by barcode
   const productMap = new Map();
-  
+
   // Iterate over the temporary products array
   for (const tempProduct of tempProducts) {
     const barcode = tempProduct.barcode;
-  
+
     // If the product already exists in the product map, add its quantity and update the selling price
     if (productMap.has(barcode)) {
       const existingProduct = productMap.get(barcode);
@@ -130,15 +125,14 @@ export async function createSale(req, res, next) {
     } else {
       // If the product doesn't exist in the product map, add it
       productMap.set(barcode, tempProduct);
-      
     }
   }
-  
+
   // Add the consolidated products from the product map to the products array
   for (const product of productMap.values()) {
     products.push(product);
   }
-  
+
   try {
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
@@ -154,7 +148,7 @@ export async function createSale(req, res, next) {
         products[i].price = existingProduct.selling_price.replace("$", "");
       }
     }
-  const sale = new Sale({...req.body,products});
+    const sale = new Sale({ ...req.body, products });
 
     if (products.length > 0) {
       for (const product of products) {
@@ -191,10 +185,45 @@ export async function createSale(req, res, next) {
     next(error);
   }
 }
+export async function deleteSale(req, res, next) {
+  const { id } = req.params;
+
+  try {
+    const deletedSale = await Sale.findOneAndDelete({ _id: id });
+
+    if (!deletedSale) {
+      throw new Error("Sale not found");
+    }
+
+    const deletedProducts = deletedSale.products;
+
+    for (const deletedProduct of deletedProducts) {
+      const { barcode, quantity } = deletedProduct;
+
+      const existingProduct = await ProductInfo.findOne({ bar_code: barcode });
+
+      if (!existingProduct) {
+        throw new Error(`Product with barcode ${barcode} not found`);
+      }
+
+      const updatedQuantity = existingProduct.quantity + quantity;
+
+      await ProductInfo.findOneAndUpdate(
+        { bar_code: barcode },
+        { $set: { quantity: updatedQuantity } }
+      );
+    }
+
+    res.status(200).send({ message: "Sale deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function editSale(req, res, next) {
   const { id } = req.params;
   const { products } = req.body;
-  
+
   try {
     const sale = await Sale.findById(id);
 
@@ -213,7 +242,9 @@ export async function editSale(req, res, next) {
         throw new Error("Product not found: " + barcode);
       }
 
-      const oldQuantity = parseInt(sale.products.find((p) => p.barcode === barcode)?.quantity || 0);
+      const oldQuantity = parseInt(
+        sale.products.find((p) => p.barcode === barcode)?.quantity || 0
+      );
       const newQuantity = parseInt(quantity);
 
       const quantityDiff = newQuantity - oldQuantity;
@@ -232,27 +263,22 @@ export async function editSale(req, res, next) {
         { bar_code: barcode },
         { $set: { quantity: updatedQuantity } }
       );
-    } 
-    const updatedSale =await  Sale.findByIdAndUpdate(id,{products},{new:true})
-    console.log(updatedSale)
+    }
+    const updatedSale = await Sale.findByIdAndUpdate(
+      id,
+      { products },
+      { new: true }
+    );
+    console.log(updatedSale);
 
-    res.status(200).send({ message: "Sale updated successfully" ,sale:updatedSale});
+    res
+      .status(200)
+      .send({ message: "Sale updated successfully", sale: updatedSale });
   } catch (error) {
     next(error);
   }
 }
 
-
-export function deleteSale(req, res, next) {
-  const { id } = req.params;
-  Sale.findOneAndDelete({ _id: id }, { new: true })
-    .then((response) => {
-      res.status(200).send({ message: response });
-    })
-    .catch((err) => {
-      next(err);
-    });
-}
 export function getLastFiveItems(req, res, next) {
   const models = [ProductInfo, Customer, Supplier];
   const fields = ["created_at", "created_at", "created_at"];
@@ -266,7 +292,6 @@ export function getLastFiveItems(req, res, next) {
 
     if (models[index] === ProductInfo) {
       const quantityZeroQuery = { quantity: 0 };
-   
 
       Promise.all([
         models[index].find(quantityZeroQuery),
